@@ -1,0 +1,69 @@
+import sys
+import numpy as np
+import pandas as pd
+print("python ", sys.version,
+      "\nnumpy", np.__version__,
+      "\npandas", pd.__version__)
+
+listings = pd.read_csv("airbnb_listings.csv")
+reviews = pd.read_csv("airbnb_reviews.csv")
+
+
+
+def Q2(listings):
+
+    print(listings.head())
+    listings_reduced = listings[["price", "minimum_nights"]]
+
+    #getting rid of any rows which aren't filled in (invalid)
+    listings_complete = listings_reduced.dropna()
+
+    #Set any values where min nights is 0 to 1
+    listings_complete["minimun_nights"] = listings_complete["minimum_nights"].replace(0, 1)
+
+    #Create the new rows
+    listings = listings \
+    .assign(minimum_price = listings_complete.minimum_nights * listings_complete.price)
+
+    print(listings.head())
+
+    return listings
+
+def Q3(listings, reviews):
+    print(listings)
+    #Find for each listing id the number of reviews to compare to listings
+    reviewsc = reviews \
+    .groupby(['listing_id']) \
+    .aggregate(n = ('listing_id', "count")) \
+    .sort_values('n', ascending = False)
+
+    mergedlist = reviewsc.merge(listings, left_on = "listing_id", right_on = "id")[["id", "n", "number_of_reviews"]]
+    mergedlist = mergedlist[mergedlist["n"] != mergedlist["number_of_reviews"]]
+    print(mergedlist["id"]) # all the ids
+
+
+def Q4(listings):
+    priceavg = listings.groupby(["host_id", "neighborhood_group"], as_index=False)["price"].mean().round()
+    priceavg = priceavg.pivot(columns="neighborhood_group", index="host_id", values="price")
+    print(priceavg)
+
+    return priceavg
+    
+    #l_sorted = listings[["host_id", "neighborhood_group", "price"]].sort_values(['host_id', 'neighborhood_group'])
+
+def Q5(listings):
+    #same as Q4 but with a query
+    priceavg = listings.groupby(["host_id", "neighborhood_group"], as_index=False)["price"].mean().round().query("price < 30")
+    priceavg = priceavg.pivot(columns="neighborhood_group", index="host_id", values="price")
+    print(priceavg)
+
+    return priceavg
+
+
+
+
+
+# Q2(listings)
+# Q3(listings, reviews)
+# Q4(listings)
+Q5(listings)
